@@ -4,11 +4,7 @@ use std::ffi::OsStr;
 use std::collections::HashMap;
 use std::convert::TryInto;
 
-use clap::{
-	ArgAction,
-	crate_version,
-	Parser,
-};
+use clap::{ArgAction, crate_version, crate_authors, Parser};
 use colored::*;
 use regex::Regex;
 
@@ -19,7 +15,7 @@ mod dir;
 #[derive(Parser)]
 #[command(
 	name = "filmls",
-	author = "Jake·W.·Ireland.·<jakewilliami@icloud.com>",
+	author = crate_authors!("\n"),
 	version = crate_version!(),
 )]
 /// A command line interface for listing films in order of date
