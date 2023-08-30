@@ -1,3 +1,7 @@
+#!/bin/bash
+
+set -xe
+
 TARGET="debug"  # or "debug"
 FLAG=""
 if [[ $TARGET != "debug" ]]; then
