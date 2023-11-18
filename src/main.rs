@@ -98,14 +98,15 @@ struct Cli {
 fn main() {
     let cli = Cli::parse();
 
-    // If there is no directory provided, we will use either a predefined media directory, or the current directory
-    let mut dirname = if let Some(dirname) = cli.dir {
+    // If there is no directory provided, we will use either
+    // a predefined media directory, or the current directory
+    let dirname = if let Some(dirname) = cli.dir {
         dirname
     } else {
         dir::get_media_dir()
     };
 
-    //// List films
+    // List films
     // If no arguments are passed, will list
     if std::env::args().len() <= 1 {
         // Get films directory if none provided
@@ -117,15 +118,15 @@ fn main() {
         let mut film_map = HashMap::<String, isize>::new();
         // read the directory
         // Ensure it is sorted by title before we sort by date
-        // We need to do this because the order in which `read_dir` returns entries is not guaranteed.
-        // If reproducible ordering is required the entries should be explicitly sorted.
+        // We need to do this because the order in which `read_dir`
+        // returns entries is not guaranteed.
+        // If reproducible ordering is required the entries should be
+        // explicitly sorted.
         let mut films: Vec<_> = fs::read_dir(&films_dir)
             .expect("Cannot read directory")
-            // .map(|res| res.map(|e|
             .map(|e| {
                 e.expect("Cannot retreive file information")
                     .path()
-                    // .expect("Cannot retreive file information")
                     .file_name()
                     .expect("Cannot get file name from file")
                     .to_str()
@@ -137,23 +138,10 @@ fn main() {
         films.sort();
 
         for film_name in films {
-            // let film = film.expect("Cannot unwrap film information");
-            // let film_path = film.path();
-            // let film_name = film.file_name()
-            // .expect("Cannot get file name from film")
-            // .to_str()
-            // .unwrap()
-            // .to_string();
-
-            // initilaise the film to be zero
-            // this way, the film will be first if there is no year
-            let mut film_year: isize = 0;
             // if there's a match, update the year of the film
-            // if film_name.contains(&re) {
             if constants::FILM_RE.is_match(&film_name) {
                 let caps = constants::FILM_RE.captures(&film_name).unwrap();
-                // film_year = film_name.captures(&re)
-                film_year = caps
+                let film_year = caps
                     .name("fyear")
                     .unwrap()
                     .as_str()
@@ -163,38 +151,19 @@ fn main() {
             } else {
                 eprintln!("Warning: film \"{}\" does not match regex", &film_name)
             }
-            // Update the hashmap
         }
 
-        /*
-        // iterate over the sorted values (i.e., years) of the hashmap
-        for val in film_map.values().sorted() {
-            // key = find_key_for_value(&film_map, val).unwrap();
-
-            // we need to do it like this so that if we have "Robin Hood (1997)"
-            // and "Robin Hood (2018)", we choose them both at the same time, but
-            // print the earliest one first.  It's kind of like sorting by date
-            // and then alphabetically
-            for key in film_map.keys().sorted() {
-                if film_map[key] == *val {
-                    println!("{}", key);
-                    break;
-                }
-            }
-        }
-        */
-
-        // Convert film info to vector of tuples (which is inherently ordered)
-        // and sort said vector by the year
+        // Convert film info to vector of tuples (which is inherently
+        // ordered) and sort said vector by the year
         let mut film_vec: Vec<_> = film_map.iter().collect();
         film_vec.sort_by(|a, b| b.1.cmp(a.1));
 
         for f in film_vec.into_iter().rev() {
             println!("{}", f.0.blue().bold());
         }
-    } // end default arg
+    }
 
-    //// Count media
+    // Count media
     if let Some(show_count) = cli.count {
         if show_count {
             // Count films
@@ -219,18 +188,16 @@ fn main() {
                     series_dir.push(constants::SERIES_DIR_NAME);
                     let mut cnt = 0;
                     let series: Vec<_> = fs::read_dir(&series_dir)
-                        .expect(format!("Cannot read directory: {:?}", series_dir).as_str())
+                        .unwrap_or_else(|_| panic!("Cannot read directory: {:?}", series_dir))
                         .map(|e| e.expect("Cannot retreive file information").path())
                         .collect();
                     for path in series {
                         if path.is_dir() {
                             let contents: Vec<_> = fs::read_dir(&path)
                                 .expect("Cannot read directory")
-                                // .map(|res| res.map(|e|
                                 .map(|e| {
                                     e.expect("Cannot retreive file information")
                                         .path()
-                                        // .expect("Cannot retreive file information")
                                         .file_name()
                                         .expect("Cannot get file name from file")
                                         .to_str()
@@ -238,18 +205,6 @@ fn main() {
                                         .to_string()
                                 })
                                 .collect();
-                            /*
-                            let contents: Vec<_> = fs::read_dir(&path)
-                                .expect(format!("Cannot read directory: {:?}", series_dir).as_str())
-                                .map(|e|
-                                    e.expect("Cannot retreive file information")
-                                     .path()
-                                     .file_name()
-                                     .expect(format!("Cannot read file name from file {:?}", e).as_str())
-                                     .to_str()
-                                     .expect(format!("Cannot stringify file name {:?}", e).as_str())
-                                )
-                                .collect();*/
                             if contents.iter().any(|d| constants::SEASON_RE.is_match(d)) {
                                 cnt += 1;
                             }
@@ -266,9 +221,8 @@ fn main() {
         }
     }
 
-    //// Season utility functions
-
-    //// Check if season episodes have titles
+    // Season utility functions
+    // Check if season episodes have titles
     if let Some(check_titles) = cli.titles {
         if check_titles {
             let mut series_dir = dirname.clone();
@@ -277,7 +231,7 @@ fn main() {
             let mut missing_ep_names_map = HashMap::<String, Vec<isize>>::new();
             // Get series available
             let series: Vec<_> = fs::read_dir(&series_dir)
-                .expect(format!("Cannot read directory: {:?}", series_dir).as_str())
+                .unwrap_or_else(|_| panic!("Cannot read directory: {:?}", series_dir))
                 .map(|e| e.expect("Cannot retreive file information").path())
                 .collect();
             // Search through series
@@ -300,7 +254,7 @@ fn main() {
                     // Search through series' seasons
                     for season_dir in contents.iter().filter(|d| constants::SEASON_RE.is_match(d)) {
                         let mut season_dir_path = path.clone();
-                        season_dir_path.push(&season_dir);
+                        season_dir_path.push(season_dir);
                         let season_content: Vec<_> = fs::read_dir(&season_dir_path)
                             .expect("Cannot read directory")
                             .map(|e| {
@@ -341,9 +295,7 @@ fn main() {
             for (s, v) in missing_ep_names_map.iter() {
                 if !v.is_empty() {
                     println!("{}", &s.blue().bold())
-                } /*else {
-                      println!("{}", &s.green())
-                  }*/
+                }
                 let mut w = v.clone();
                 w.sort();
                 for si in w.iter() {
@@ -353,7 +305,7 @@ fn main() {
         }
     }
 
-    //// Alert on non-consecutive seasons
+    // Alert on non-consecutive seasons
     if let Some(check_consecutive_seasons) = cli.consecutive_seasons {
         if check_consecutive_seasons {
             let mut series_dir = dirname.clone();
@@ -362,7 +314,7 @@ fn main() {
             let mut missing_seasons_map = HashMap::<String, Vec<isize>>::new();
             // Get series available
             let series: Vec<_> = fs::read_dir(&series_dir)
-                .expect(format!("Cannot read directory: {:?}", series_dir).as_str())
+                .unwrap_or_else(|_| panic!("Cannot read directory: {:?}", series_dir))
                 .map(|e| e.expect("Cannot retreive file information").path())
                 .collect();
             // Search through series
@@ -403,7 +355,6 @@ fn main() {
                         .iter()
                         .max()
                         .expect("Cannot determine maximum season number");
-                    // let is_consecutive = (1..=max_se_num).iter().all(|n| season_numbers.contains(n));
                     for i in 1..=*max_se_num {
                         if !season_numbers.contains(&i) {
                             if let Some(v) = missing_seasons_map.get_mut(series_name_outer) {
@@ -417,9 +368,7 @@ fn main() {
             for (s, v) in missing_seasons_map.iter() {
                 if !v.is_empty() {
                     println!("{}", &s.blue().bold())
-                } /*else {
-                      println!("{}", &s.green())
-                  }*/
+                }
                 let mut w = v.clone();
                 w.sort();
                 for si in w.iter() {
@@ -429,74 +378,11 @@ fn main() {
         }
     }
 
-    // Check TODO: comment about this block
-    // https://github.com/G-Street/media-scripts/blob/4dfc232d/plex/format.md#subtitles
-    if let Some(check_subtitles) = cli.subtitles {
-        if check_subtitles {
-            // Process films
-            if let Some(check_film_subtitles) = cli.films {
-                if check_film_subtitles {
-                    let mut films_dir = dirname.clone();
-                    films_dir.push(constants::FILMS_DIR_NAME);
-                    // let cnt = count_media_files(&films_dir);
-                    for sub in list_subtitles(&films_dir) {
-                        // TODO: warn if subtitle base name does not match film
-                        if !check_subtitle_format(&sub, &constants::SUB_RE) {
-                            println!(
-                                "{}{}{}",
-                                "Subtitle file ".italic(),
-                                sub.bold(),
-                                " is incorrectly formatted".italic()
-                            );
-                        }
-                    }
-                }
-            }
-
-            // TODO: comment about this block
-            // Count series
-            if let Some(check_series_subtitles) = cli.series {
-                if check_series_subtitles {
-                    let mut series_dir = dirname.clone();
-                    series_dir.push(constants::SERIES_DIR_NAME);
-                    let series: Vec<_> = fs::read_dir(&series_dir)
-                        .expect(format!("Cannot read directory: {:?}", series_dir).as_str())
-                        .map(|e| e.expect("Cannot retreive file information").path())
-                        .collect();
-                    for path in series {
-                        if path.is_dir() {
-                            for p in fs::read_dir(&path)
-                                .expect("Cannot read directory")
-                                .map(|e| e.unwrap())
-                            {
-                                let p = &p.path();
-                                let p = &p.as_path();
-                                let d = &p
-                                    .file_name()
-                                    .expect("Cannot get file name from file")
-                                    .to_str()
-                                    .unwrap();
-                                if constants::SEASON_RE.is_match(d) {
-                                    for sub in list_subtitles(p) {
-                                        // TODO: warn if subtitle base name does not match film
-                                        if !check_subtitle_format(&sub, &constants::SUB_RE) {
-                                            println!(
-                                                "{}{}{}",
-                                                "Subtitle file ".italic(),
-                                                sub.bold(),
-                                                " is incorrectly formatted".italic()
-                                            );
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+    if let Some(check_complete_episodes) = cli.complete_episodes {
+        if check_complete_episodes {
+            todo!();
         }
     }
-
     /*if matches.is_present("COMPLETE_EPS") {
         let mut series_dir = dirname.clone();
         series_dir.push(SERIES_DIR_NAME);
@@ -571,6 +457,72 @@ fn main() {
             }
         }
     }*/
+
+    // Check subtitle format
+    // https://github.com/G-Street/media-scripts/blob/4dfc232d/plex/format.md#subtitles
+    if let Some(check_subtitles) = cli.subtitles {
+        if check_subtitles {
+            // Process films
+            if let Some(check_film_subtitles) = cli.films {
+                if check_film_subtitles {
+                    let mut films_dir = dirname.clone();
+                    films_dir.push(constants::FILMS_DIR_NAME);
+                    for sub in list_subtitles(&films_dir) {
+                        // TODO: warn if subtitle base name does not match film
+                        if !check_subtitle_format(&sub, &constants::SUB_RE) {
+                            println!(
+                                "{}{}{}",
+                                "Subtitle file ".italic(),
+                                sub.bold(),
+                                " is incorrectly formatted".italic()
+                            );
+                        }
+                    }
+                }
+            }
+
+            // Process series
+            if let Some(check_series_subtitles) = cli.series {
+                if check_series_subtitles {
+                    let mut series_dir = dirname.clone();
+                    series_dir.push(constants::SERIES_DIR_NAME);
+                    let series: Vec<_> = fs::read_dir(&series_dir)
+                        .unwrap_or_else(|_| panic!("Cannot read directory: {:?}", series_dir))
+                        .map(|e| e.expect("Cannot retreive file information").path())
+                        .collect();
+                    for path in series {
+                        if path.is_dir() {
+                            for p in fs::read_dir(&path)
+                                .expect("Cannot read directory")
+                                .map(|e| e.unwrap())
+                            {
+                                let p = &p.path();
+                                let p = &p.as_path();
+                                let d = &p
+                                    .file_name()
+                                    .expect("Cannot get file name from file")
+                                    .to_str()
+                                    .unwrap();
+                                if constants::SEASON_RE.is_match(d) {
+                                    for sub in list_subtitles(p) {
+                                        // TODO: warn if subtitle base name does not match film
+                                        if !check_subtitle_format(&sub, &constants::SUB_RE) {
+                                            println!(
+                                                "{}{}{}",
+                                                "Subtitle file ".italic(),
+                                                sub.bold(),
+                                                " is incorrectly formatted".italic()
+                                            );
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 // fn find_key_for_value<'a>(map: &'a HashMap<i32, &'static str>, value: &str) -> Option<&'a i32> {
@@ -602,11 +554,12 @@ fn count_media_files(dir: &Path) -> usize {
         Ok(())
     }
     let mut cnt = 0;
-    recurse_files_count_if_media(dir, &mut cnt);
+    let _ = recurse_files_count_if_media(dir, &mut cnt);
     cnt.try_into().unwrap()
 }
 
 fn list_subtitles(dir: &Path) -> Vec<String> {
+    // TODO: use walkdir or something (see jakewilliami/lsext)
     fn recurse_files_count_if_media(dir: &Path, subs: &mut Vec<String>) -> io::Result<()> {
         if dir.is_dir() {
             for entry in fs::read_dir(dir)? {
@@ -625,7 +578,7 @@ fn list_subtitles(dir: &Path) -> Vec<String> {
         Ok(())
     }
     let mut subs = Vec::new();
-    recurse_files_count_if_media(dir, &mut subs);
+    let _ = recurse_files_count_if_media(dir, &mut subs);
     subs
 }
 
