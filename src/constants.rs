@@ -1,10 +1,6 @@
 use lazy_static::lazy_static;
 use regex::Regex;
 
-// Films and series directory names
-pub const FILMS_DIR_NAME: &str = "Films";
-pub const SERIES_DIR_NAME: &str = "Series";
-
 // Define media source types
 
 // Source: https://blog.filestack.com/thoughts-and-knowledge/complete-list-audio-video-file-formats/
@@ -23,7 +19,7 @@ pub const SUBTITLE_TYPES: [&str; 5] = ["srt", "smi", "ssa", "ass", "vtt"];
 
 lazy_static! {
     pub static ref FILM_RE: Regex = Regex::new(r"^(?P<fname>.+)\s+\((?P<fyear>\d{4})\)$").unwrap();
-    pub static ref SEASON_RE: Regex = Regex::new(r"^Season\s(?P<snum>\d{2,})$").unwrap();
+    pub static ref SEASON_RE: Regex = Regex::new(r"^Season\s(?P<snum>\d{2,})(\s\-\s(?P<sname>.+))?$").unwrap();
     // pub static ref EP_RE: Regex = Regex::new(r"^(.*)\s\-\sS(\d+)E(\d+)(?:\s\-\s)(?:.*)\.(.*)$").unwrap();  // THIS WAS BUGGED - DOES NOT WORK!
     pub static ref EP_RE: Regex = Regex::new(r"^(?P<sname>.+)\s\-\sS(?P<snum>\d+)E(?P<epnum>\d{2,})(\s-\s)?(?P<epname>.+)?\.(?P<ext>\w+)$").unwrap();
     static ref SUB_EXT_RE: Regex = Regex::new(&SUBTITLE_TYPES.join("|")).unwrap();
