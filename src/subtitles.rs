@@ -1,12 +1,10 @@
-use std::path::Path;
-use std::{fs, io};
-
-use colored::*;
-use regex::Regex;
-
 use super::constants;
 use super::dir::MediaType;
 use super::path;
+use colored::*;
+use regex::Regex;
+use std::path::Path;
+use std::{fs, io, process};
 
 pub fn list_erroneous_subtitles(dirname: &Path, media_type: &MediaType) {
     match media_type {
@@ -28,10 +26,21 @@ pub fn list_erroneous_subtitles(dirname: &Path, media_type: &MediaType) {
         MediaType::Series => {
             let mut series_dir = dirname.to_path_buf();
             series_dir.push(media_type.as_str());
+
+            // Exit gracefully if the series directory doesn't exist
+            // Rather than panicking in the next step
+            if !series_dir.exists() {
+                eprintln!("No such file or directory: {:?}", series_dir);
+                process::exit(1);
+            }
+
+            // Get individual series from series directory
             let series: Vec<_> = fs::read_dir(&series_dir)
                 .unwrap_or_else(|_| panic!("Cannot read directory: {:?}", series_dir))
                 .map(|e| e.expect("Cannot retreive file information").path())
                 .collect();
+
+            // Check subtitle format for each season for each series
             for path in series {
                 if path.is_dir() {
                     for p in fs::read_dir(&path)
@@ -69,6 +78,12 @@ pub fn list_erroneous_subtitles(dirname: &Path, media_type: &MediaType) {
 }
 
 fn list_subtitles(dir: &Path) -> Vec<String> {
+    // First check that the path exists
+    if !dir.exists() {
+        eprintln!("No such file or directory: {:?}", dir);
+        process::exit(1);
+    }
+
     // TODO: use walkdir or something (see jakewilliami/lsext)
     fn recurse_files_count_if_media(dir: &Path, subs: &mut Vec<String>) -> io::Result<()> {
         if dir.is_dir() {
