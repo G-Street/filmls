@@ -1,15 +1,11 @@
-use std::collections::HashMap;
-use std::path::PathBuf;
-use std::{env, fs};
-
-use clap::{crate_authors, crate_version, ArgAction, Parser};
+use clap::{crate_authors, crate_name, crate_version, ArgAction, Parser, Subcommand};
 use colored::*;
+use std::{collections::HashMap, env, fs, path::PathBuf, process};
 
 mod constants;
 mod count;
 mod dir;
 mod episodes;
-use dir::MediaType;
 mod path;
 mod seasons;
 mod subtitles;
@@ -20,8 +16,8 @@ mod titles;
 // Define command line interface
 #[derive(Parser)]
 #[command(
-    name = "filmls",
-    author = crate_authors!("\n"),
+    name = crate_name!(),
+    author = crate_authors!(", "),
     version = crate_version!(),
 )]
 /// A command line interface for listing films in order of date
@@ -95,6 +91,15 @@ struct Cli {
         num_args = 0..=1,
     )]
     dir: Option<PathBuf>,
+
+    #[command(subcommand)]
+    command: Option<Command>,
+}
+
+#[derive(Subcommand)]
+enum Command {
+    /// Print the media directory the programme will use
+    MediaDir,
 }
 
 // Main function
@@ -110,21 +115,29 @@ fn main() {
         dir::get_media_dir()
     };
 
+    match cli.command {
+        Some(Command::MediaDir) => {
+            println!("{}", dirname.display());
+            process::exit(0);
+        }
+        None => {}
+    }
+
     // Construct media type from CLI args
     let media_type = if let Some(films) = cli.films {
         if films {
-            MediaType::Film
+            dir::MediaType::Film
         } else {
-            MediaType::Impossible
+            dir::MediaType::Impossible
         }
     } else if let Some(series) = cli.series {
         if series {
-            MediaType::Series
+            dir::MediaType::Series
         } else {
-            MediaType::Impossible
+            dir::MediaType::Impossible
         }
     } else {
-        MediaType::Unknown
+        dir::MediaType::Unknown
     };
 
     // List films
@@ -132,7 +145,7 @@ fn main() {
     if std::env::args().len() <= 1 {
         // Get films directory if none provided
         let mut films_dir = dirname.clone();
-        films_dir.push(MediaType::Film.as_str());
+        films_dir.push(dir::MediaType::Film.as_str());
 
         // We want to store films in a hashmap with <film name -> year> so that
         // we can sort it by year

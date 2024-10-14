@@ -36,7 +36,7 @@ pub fn get_media_dir() -> PathBuf {
 }
 
 // Fallback on current dir
-#[cfg(any(target_family = "windows", target_family = "wasm"))]
+#[cfg(not(any(target_os = "freebsd", target_os = "linux", target_os = "macos")))]
 pub fn get_media_dir() -> PathBuf {
     std::env::current_dir().expect("Cannot get current directory")
 }
