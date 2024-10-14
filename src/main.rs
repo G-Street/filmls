@@ -109,10 +109,10 @@ fn main() {
 
     // If there is no directory provided, we will use either
     // a predefined media directory, or the current directory
-    let dirname = if let Some(dirname) = cli.dir {
+    let dirname = if let Some(ref dirname) = cli.dir {
         dirname
     } else {
-        dir::get_media_dir()
+        &dir::get_media_dir()
     };
 
     match cli.command {
@@ -123,22 +123,36 @@ fn main() {
         None => {}
     }
 
+    // Check that not both -s and -f are present
+    if (cli.films, cli.series) == (Some(true), Some(true)) {
+        eprintln!("[ERROR] Cannot infer media type when both -f and -s are given");
+        process::exit(1);
+    }
+
     // Construct media type from CLI args
-    let media_type = if let Some(films) = cli.films {
+    let mut media_type = None;
+    if let Some(films) = cli.films {
         if films {
-            dir::MediaType::Film
-        } else {
-            dir::MediaType::Impossible
+            media_type = Some(dir::MediaType::Film);
         }
-    } else if let Some(series) = cli.series {
+    }
+    if let Some(series) = cli.series {
         if series {
-            dir::MediaType::Series
-        } else {
-            dir::MediaType::Impossible
+            media_type = Some(dir::MediaType::Series);
         }
-    } else {
-        dir::MediaType::Unknown
-    };
+    }
+    if (cli.films, cli.series) == (Some(false), Some(false)) {
+        media_type = Some(dir::MediaType::Impossible);
+    }
+    if media_type.is_none() && cli.films.is_none() && cli.series.is_none() {
+        media_type = Some(dir::MediaType::Unknown);
+    }
+    let media_type = media_type.unwrap_or_else(|| {
+        panic!(
+            "Unhandled media type with (cli.films={:?}, cli.series={:?})",
+            cli.films, cli.series
+        )
+    });
 
     // List films
     // If no arguments are passed, will list
@@ -200,7 +214,7 @@ fn main() {
     // Count media
     if let Some(show_count) = cli.count {
         if show_count {
-            count::show_count(&dirname, &media_type);
+            count::show_count(dirname, &media_type);
         }
     }
 
@@ -208,21 +222,21 @@ fn main() {
     // Check if season episodes have titles
     if let Some(check_titles) = cli.titles {
         if check_titles {
-            titles::check_series_titles(&dirname);
+            titles::check_series_titles(dirname);
         }
     }
 
     // Alert on non-consecutive seasons
     if let Some(check_consecutive_seasons) = cli.consecutive_seasons {
         if check_consecutive_seasons {
-            seasons::check_consecutive_seasons(&dirname);
+            seasons::check_consecutive_seasons(dirname);
         }
     }
 
     // TODO: Check that no episodes are missing from any given season
     if let Some(check_complete_episodes) = cli.complete_episodes {
         if check_complete_episodes {
-            episodes::check_complete_episodes(&dirname);
+            episodes::check_complete_episodes(dirname);
         }
     }
 
@@ -230,7 +244,13 @@ fn main() {
     // https://github.com/G-Street/media-scripts/blob/4dfc232d/plex/format.md#subtitles
     if let Some(check_subtitles) = cli.subtitles {
         if check_subtitles {
-            subtitles::list_erroneous_subtitles(&dirname, &media_type)
+            let films_only = (cli.films, cli.series) == (Some(true), Some(false));
+            let series_only = (cli.films, cli.series) == (Some(false), Some(true));
+            if !(films_only || series_only) {
+                eprintln!("[ERROR] Must use -f or -s with -C");
+                process::exit(1);
+            }
+            subtitles::list_erroneous_subtitles(dirname, &media_type)
         }
     }
 }
