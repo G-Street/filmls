@@ -8,14 +8,14 @@ This was ported originally from a [Bash script](https://github.com/G-Street/medi
 
 ## Quick Start
 
-```bash
+```shell
 $ ./compile.sh
 $ ./filmls -h
 ```
 
 ## Usage
 
-```commandline
+```shell
 $ filmls -h
 A command line interface for listing films in order of date
 
