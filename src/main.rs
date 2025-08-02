@@ -77,6 +77,7 @@ struct Cli {
     subtitles: Option<bool>,
 
     /// Check if film or series have correctly-formatted subtitles
+    // TODO: why is this called complete episodes?
     #[arg(
         short = 'e',
         long = "complete-episodes",
@@ -250,6 +251,7 @@ fn main() {
                 eprintln!("[ERROR] Must use -f or -s with -C");
                 process::exit(1);
             }
+            // TODO: print what the correct format should be?
             subtitles::list_erroneous_subtitles(dirname, &media_type)
         }
     }
